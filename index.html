@@ -15,9 +15,6 @@
     body {
       background-color: var(--bg-pink);
       font-family: 'Fredoka', sans-serif;
-      background-image: url('https://i.imgur.com/xZ8XZGa.png'); /* fondo de huellitas funcional */
-      background-repeat: repeat;
-      background-size: 200px;
       color: #4b1c3f;
     }
 
@@ -42,7 +39,7 @@
 </head>
 <body class="p-6">
   <h1 class="text-4xl font-bold text-center text-pink-600 mb-8">
-    🐾 Malla Curricular - Medicina Veterinaria y Zootecnia 🐾
+    Malla Curricular - Medicina Veterinaria y Zootecnia
   </h1>
 
   <div id="malla" class="space-y-4"></div>
@@ -102,7 +99,7 @@
 
         const summary = document.createElement("summary");
         summary.className = "text-xl font-semibold text-pink-700 cursor-pointer select-none mb-2";
-        summary.innerHTML = `🐶 ${ciclo} 🐱`;
+        summary.textContent = ciclo;
 
         details.appendChild(summary);
 
