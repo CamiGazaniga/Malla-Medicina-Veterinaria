@@ -5,163 +5,126 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Malla Curricular Veterinaria</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-pink: #ffe4e6;
+      --bg-pink: #fff0f5;
       --accent-pink: #f472b6;
     }
-
     body {
       background-color: var(--bg-pink);
-      font-family: 'Fredoka', sans-serif;
-      color: #4b1c3f;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-
     .completed {
       text-decoration: line-through;
       opacity: 0.5;
     }
-
+    summary {
+      transition: color 0.3s ease;
+    }
     summary:hover {
       color: #ec4899;
-    }
-
-    #barra-progreso {
-      height: 1rem;
-      border-radius: 1rem;
-    }
-
-    #barra-completada {
-      background-color: var(--accent-pink);
-      height: 100%;
-      border-radius: 1rem;
-      transition: width 0.5s ease;
     }
   </style>
 </head>
 <body class="p-6">
-  <h1 class="text-4xl font-bold text-center text-pink-600 mb-6">
-    🐾 Malla Curricular - Medicina Veterinaria y Zootecnia 🐾
-  </h1>
-
-  <div class="mb-6">
-    <div class="text-center font-semibold text-pink-800 mb-1" id="progreso-texto">Progreso: 0%</div>
-    <div id="barra-progreso" class="w-full bg-pink-200">
-      <div id="barra-completada" style="width: 0%"></div>
-    </div>
-  </div>
-
+  <h1 class="text-4xl font-bold text-center text-pink-600 mb-8">🐾 Malla Curricular - Medicina Veterinaria y Zootecnia 🐾</h1>
+  <div id="contador" class="text-center text-lg font-medium text-pink-700 mb-4"></div>
   <div id="malla" class="space-y-4"></div>
 
   <script>
-    const emojisCiclo = {
-      "Primer Ciclo": "🦴",
-      "Segundo Ciclo": "🐶",
-      "Tercer Ciclo": "🐱",
-      "Cuarto Ciclo": "🐰",
-      "Quinto Ciclo": "🐮",
-      "Sexto Ciclo": "🐷",
-      "Séptimo Ciclo": "🐴",
-      "Octavo Ciclo": "🐔",
-      "Noveno Ciclo": "🐟",
-      "Décimo Ciclo": "🩺"
-    };
+function guardarProgreso(completados) {
+  localStorage.setItem("cursosCompletados", JSON.stringify([...completados]));
+}
 
-    function guardarProgreso(completados) {
-      localStorage.setItem("cursosCompletados", JSON.stringify([...completados]));
+function cargarProgreso() {
+  const datos = localStorage.getItem("cursosCompletados");
+  return datos ? new Set(JSON.parse(datos)) : new Set();
+}
+
+function prerrequisitosCompletos(prereqs, completados) {
+  return prereqs.every(p => completados.has(p));
+}
+
+function crearCurso(curso, completados, actualizar) {
+  const div = document.createElement("div");
+  div.className = "flex items-center space-x-2 py-1";
+
+  const check = document.createElement("input");
+  check.type = "checkbox";
+  check.className = "accent-pink-500";
+  check.checked = completados.has(curso.id);
+  check.disabled = !prerrequisitosCompletos(curso.prereqs, completados);
+
+  const label = document.createElement("label");
+  label.textContent = `${curso.nombre} | Créditos: ${curso.creditos}`;
+  if (check.checked) label.classList.add("completed");
+
+  check.addEventListener("change", () => {
+    if (check.checked) {
+      completados.add(curso.id);
+    } else {
+      completados.delete(curso.id);
     }
+    guardarProgreso(completados);
+    actualizar();
+  });
 
-    function cargarProgreso() {
-      const datos = localStorage.getItem("cursosCompletados");
-      return datos ? new Set(JSON.parse(datos)) : new Set();
-    }
+  div.appendChild(check);
+  div.appendChild(label);
+  return div;
+}
 
-    function prerrequisitosCompletos(prereqs, completados) {
-      return prereqs.every(p => completados.has(p));
-    }
-
-    function calcularProgreso(completados) {
-      let totalCreditos = 0;
-      let completadosCreditos = 0;
-      for (const ciclo in cursos) {
-        cursos[ciclo].forEach(curso => {
-          totalCreditos += curso.creditos;
-          if (completados.has(curso.id)) {
-            completadosCreditos += curso.creditos;
-          }
-        });
+function contarCreditos(completados) {
+  let total = 0;
+  let completadosCred = 0;
+  for (const ciclo in cursos) {
+    cursos[ciclo].forEach(curso => {
+      total += curso.creditos;
+      if (completados.has(curso.id)) {
+        completadosCred += curso.creditos;
       }
-      const porcentaje = Math.round((completadosCreditos / totalCreditos) * 100);
-      document.getElementById("progreso-texto").textContent = `Progreso: ${porcentaje}%`;
-      document.getElementById("barra-completada").style.width = `${porcentaje}%`;
-    }
+    });
+  }
+  return { total, completados: completadosCred };
+}
 
-    function crearCurso(curso, completados, actualizar) {
-      const div = document.createElement("div");
-      div.className = "flex items-center space-x-2 py-1";
+function renderizarMalla() {
+  const contenedor = document.getElementById("malla");
+  const contador = document.getElementById("contador");
+  contenedor.innerHTML = "";
+  const completados = cargarProgreso();
 
-      const check = document.createElement("input");
-      check.type = "checkbox";
-      check.className = "accent-pink-500";
-      check.checked = completados.has(curso.id);
-      check.disabled = !prerrequisitosCompletos(curso.prereqs, completados);
+  const creditos = contarCreditos(completados);
+  contador.textContent = `Créditos completados: ${creditos.completados} / ${creditos.total}`;
 
-      const label = document.createElement("label");
-      label.textContent = `${curso.nombre} | Créditos: ${curso.creditos}`;
-      if (check.checked) label.classList.add("completed");
+  const emojis = ["🐶", "🐱", "🐮", "🐷", "🐰", "🐴", "🦜", "🐢", "🐟", "🦁"];
+  let emojiIndex = 0;
 
-      check.addEventListener("change", () => {
-        if (check.checked) {
-          completados.add(curso.id);
-        } else {
-          completados.delete(curso.id);
-        }
-        guardarProgreso(completados);
-        actualizar();
-      });
+  for (const ciclo in cursos) {
+    const details = document.createElement("details");
+    details.className = "bg-white rounded-xl shadow p-4";
+    details.open = true;
 
-      div.appendChild(check);
-      div.appendChild(label);
-      return div;
-    }
+    const summary = document.createElement("summary");
+    summary.className = "text-xl font-semibold text-pink-700 cursor-pointer select-none mb-2";
+    summary.textContent = `${emojis[emojiIndex % emojis.length]} ${ciclo}`;
+    emojiIndex++;
 
-    function renderizarMalla() {
-      const contenedor = document.getElementById("malla");
-      contenedor.innerHTML = "";
-      const completados = cargarProgreso();
+    details.appendChild(summary);
 
-      for (const ciclo in cursos) {
-        const details = document.createElement("details");
-        details.className = "bg-white rounded-xl shadow p-4";
-        details.open = true;
+    cursos[ciclo].forEach(curso => {
+      const elementoCurso = crearCurso(curso, completados, renderizarMalla);
+      details.appendChild(elementoCurso);
+    });
 
-        const summary = document.createElement("summary");
-        summary.className = "text-xl font-semibold text-pink-700 cursor-pointer select-none mb-2";
-        const emoji = emojisCiclo[ciclo] || "";
-        summary.textContent = `${emoji} ${ciclo}`;
-
-        details.appendChild(summary);
-
-        cursos[ciclo].forEach(curso => {
-          const elementoCurso = crearCurso(curso, completados, renderizarMalla);
-          details.appendChild(elementoCurso);
-        });
-
-        contenedor.appendChild(details);
-      }
-
-      calcularProgreso(completados);
-    }
-
-    const script = document.createElement("script");
-    script.src = "cursos.js";
-    script.onload = () => {
-      document.addEventListener("DOMContentLoaded", renderizarMalla);
-    };
-    document.head.appendChild(script);
+    contenedor.appendChild(details);
+  }
+}
   </script>
-  document.addEventListener("DOMContentLoaded", renderizarMalla);
-</script>
+
+  <script src="cursos.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", renderizarMalla);
+  </script>
 </body>
 </html>
