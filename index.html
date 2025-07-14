@@ -23,28 +23,51 @@
       opacity: 0.5;
     }
 
-    summary {
-      transition: color 0.3s ease;
-    }
-
     summary:hover {
       color: #ec4899;
     }
 
-    details {
-      border: 2px solid #f9a8d4;
+    #barra-progreso {
+      height: 1rem;
       border-radius: 1rem;
+    }
+
+    #barra-completada {
+      background-color: var(--accent-pink);
+      height: 100%;
+      border-radius: 1rem;
+      transition: width 0.5s ease;
     }
   </style>
 </head>
 <body class="p-6">
-  <h1 class="text-4xl font-bold text-center text-pink-600 mb-8">
-    Malla Curricular - Medicina Veterinaria y Zootecnia
+  <h1 class="text-4xl font-bold text-center text-pink-600 mb-6">
+    🐾 Malla Curricular - Medicina Veterinaria y Zootecnia 🐾
   </h1>
+
+  <div class="mb-6">
+    <div class="text-center font-semibold text-pink-800 mb-1" id="progreso-texto">Progreso: 0%</div>
+    <div id="barra-progreso" class="w-full bg-pink-200">
+      <div id="barra-completada" style="width: 0%"></div>
+    </div>
+  </div>
 
   <div id="malla" class="space-y-4"></div>
 
   <script>
+    const emojisCiclo = {
+      "Primer Ciclo": "🦴",
+      "Segundo Ciclo": "🐶",
+      "Tercer Ciclo": "🐱",
+      "Cuarto Ciclo": "🐰",
+      "Quinto Ciclo": "🐮",
+      "Sexto Ciclo": "🐷",
+      "Séptimo Ciclo": "🐴",
+      "Octavo Ciclo": "🐔",
+      "Noveno Ciclo": "🐟",
+      "Décimo Ciclo": "🩺"
+    };
+
     function guardarProgreso(completados) {
       localStorage.setItem("cursosCompletados", JSON.stringify([...completados]));
     }
@@ -56,6 +79,22 @@
 
     function prerrequisitosCompletos(prereqs, completados) {
       return prereqs.every(p => completados.has(p));
+    }
+
+    function calcularProgreso(completados) {
+      let totalCreditos = 0;
+      let completadosCreditos = 0;
+      for (const ciclo in cursos) {
+        cursos[ciclo].forEach(curso => {
+          totalCreditos += curso.creditos;
+          if (completados.has(curso.id)) {
+            completadosCreditos += curso.creditos;
+          }
+        });
+      }
+      const porcentaje = Math.round((completadosCreditos / totalCreditos) * 100);
+      document.getElementById("progreso-texto").textContent = `Progreso: ${porcentaje}%`;
+      document.getElementById("barra-completada").style.width = `${porcentaje}%`;
     }
 
     function crearCurso(curso, completados, actualizar) {
@@ -99,7 +138,8 @@
 
         const summary = document.createElement("summary");
         summary.className = "text-xl font-semibold text-pink-700 cursor-pointer select-none mb-2";
-        summary.textContent = ciclo;
+        const emoji = emojisCiclo[ciclo] || "";
+        summary.textContent = `${emoji} ${ciclo}`;
 
         details.appendChild(summary);
 
@@ -110,6 +150,8 @@
 
         contenedor.appendChild(details);
       }
+
+      calcularProgreso(completados);
     }
 
     const script = document.createElement("script");
